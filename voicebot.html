@@ -346,7 +346,7 @@
 
   .welcome .big { font-size: 2rem; }
 
-  /* Text input fallback */
+  
   .text-input-row {
     display: flex; gap: 8px; width: 100%;
     max-width: 700px; margin: 0 auto;
@@ -519,6 +519,7 @@ function getBotReply(text) {
   return pick(responses.default);
 }
 
+
 function removeWelcome() {
   const w = document.getElementById('welcome-msg');
   if (w) w.remove();
@@ -549,7 +550,7 @@ function addMessage(role, text) {
   chatArea.appendChild(wrap);
   chatArea.scrollTop = chatArea.scrollHeight;
 
-
+  
   const ts = new Date().toLocaleTimeString('en-IN');
   conversationLogs.push({ time: ts, role, text });
 }
@@ -572,6 +573,7 @@ function removeTyping() {
 function setupRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRec) return null;
+  
   const r = new SpeechRec();
   r.continuous = true;
   r.interimResults = true;
@@ -590,13 +592,37 @@ function setupRecognition() {
     if (final) processUserInput(final.trim());
   };
 
-
-  r.onend = () => stopListening();
+  r.onend = () => {
+    
+    if (isListening) {
+      setTimeout(() => {
+        console.log("Rebooting fresh mic instance...");
+        recognition = setupRecognition(); 
+        try { 
+          recognition.start(); 
+        } catch(e) { 
+          console.error("Reboot failed", e);
+          stopListening(); 
+        }
+      }, 250); 
+    }
+  };
+  
   r.onerror = (e) => {
     console.warn('STT error:', e.error);
-    stopListening();
-    if (e.error === 'no-speech') transcriptBar.textContent = 'Kuch sunai nahi diya. Dobara try karein.';
+    
+    
+    if (e.error === 'no-speech' || e.error === 'network') {
+      return; 
+    }
+    
+    
+    if (e.error === 'not-allowed' || e.error === 'audio-capture') {
+      stopListening();
+      transcriptBar.textContent = 'Mic blocked or hardware error. Check permissions.';
+    }
   };
+  
   return r;
 }
 
@@ -623,8 +649,8 @@ function startListening() {
 }
 
 function stopListening() {
-  if (recognition) try { recognition.stop(); } catch(e) {}
   isListening = false;
+  if (recognition) try { recognition.stop(); } catch(e) {}
   micBtn.classList.remove('listening');
   micLabel.textContent = 'Tap to speak';
 }
@@ -692,7 +718,7 @@ if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
-// ---- Logs ----
+
 function openLog() {
   const el = document.getElementById('log-content');
   if (conversationLogs.length === 0) {
@@ -740,6 +766,7 @@ function clearChat() {
   transcriptBar.textContent = 'Live transcript yahan dikhega...';
   transcriptBar.className = '';
 }
+
 
 setTimeout(() => {
   addMessage('bot', 'Namaste! Main Sankar Group ka virtual assistant hoon. Aapko kaise help kar sakta hoon?\nనమస్కారం! నేను సంకర్ గ్రూప్ వర్చువల్ అసిస్టెంట్‌ని. నేను మీకు ఎలా సహాయం చేయగలను?');
