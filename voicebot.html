@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankar Group – Voice Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #15151e;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --red: #e53935;
+    --red2: #ff6b6b;
+    --text: #f0eee8;
+    --muted: #888;
+    --user-bubble: #1e2a3a;
+    --bot-bubble: #1a1a28;
+    --accent: #e53935;
+    --glow: rgba(229,57,53,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Baloo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--red);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff; letter-spacing: 1px;
+  }
+
+  header h1 { font-size: 1rem; font-weight: 600; }
+  header span { font-size: 0.8rem; color: var(--muted); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    margin-left: auto;
+    box-shadow: 0 0 6px #4caf50;
+  }
+
+  .lang-badge {
+    font-size: 11px;
+    background: rgba(229,57,53,0.15);
+    color: var(--red2);
+    border: 1px solid rgba(229,57,53,0.3);
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
+
+  #chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .msg {
+    max-width: 82%;
+    padding: 0.7rem 1rem;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    animation: fadeUp 0.3s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user {
+    background: var(--user-bubble);
+    border: 1px solid rgba(55,138,221,0.2);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.bot {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    position: relative;
+  }
+
+  .msg-label {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .msg.user .msg-label { text-align: right; }
+
+  .play-btn {
+    margin-top: 6px;
+    background: rgba(229,57,53,0.1);
+    border: 1px solid rgba(229,57,53,0.25);
+    color: var(--red2);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Baloo 2', sans-serif;
+    transition: background 0.2s;
+  }
+  .play-btn:hover { background: rgba(229,57,53,0.2); }
+
+  .typing {
+    display: flex; gap: 5px; align-items: center;
+    padding: 0.7rem 1rem;
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    max-width: 80px;
+  }
+
+  .typing span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.1); }
+  }
+
+  #transcript-bar {
+    padding: 0.6rem 1.5rem;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    min-height: 36px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    transition: color 0.3s;
+  }
+
+  #transcript-bar.active { color: var(--text); }
+
+  .bottom-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    flex-wrap: wrap;
+  }
+
+  #mic-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--red);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, box-shadow 0.3s;
+    box-shadow: 0 0 0 0 var(--glow);
+    flex-shrink: 0;
+  }
+
+  #mic-btn.listening {
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.5); }
+    70% { box-shadow: 0 0 0 18px rgba(229,57,53,0); }
+    100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+  }
+
+  #mic-btn:hover { transform: scale(1.07); }
+  #mic-btn:active { transform: scale(0.96); }
+
+  #mic-btn svg { width: 26px; height: 26px; fill: #fff; }
+
+  .side-btns {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .icon-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Baloo 2', sans-serif;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .icon-btn:hover { background: var(--border); color: var(--text); }
+
+  #mic-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .mic-wrap { display: flex; flex-direction: column; align-items: center; }
+
+  .lang-row {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    padding: 0.5rem 1rem 0;
+    max-width: 700px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .lang-btn {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 3px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Baloo 2', sans-serif;
+    transition: 0.2s;
+  }
+  .lang-btn.active, .lang-btn:hover {
+    background: rgba(229,57,53,0.12);
+    border-color: rgba(229,57,53,0.35);
+    color: var(--red2);
+  }
+
+  #log-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Baloo 2', sans-serif;
+  }
+
+  #log-modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #log-modal.open { display: flex; }
+
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .modal-box h3 {
+    margin-bottom: 12px;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  #log-content {
+    font-size: 0.8rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-family: monospace;
+  }
+
+  .modal-actions {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+  }
+  .modal-actions button:hover { background: var(--border); }
+
+  .welcome {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin: auto;
+    padding: 2rem;
+    line-height: 2;
+  }
+
+  .welcome .big { font-size: 2rem; }
+
+  /* Text input fallback */
+  .text-input-row {
+    display: flex; gap: 8px; width: 100%;
+    max-width: 700px; margin: 0 auto;
+    padding: 0 0 0.5rem;
+  }
+
+  #text-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+    outline: none;
+  }
+  #text-input:focus { border-color: rgba(229,57,53,0.4); }
+
+  #send-btn {
+    background: var(--red);
+    border: none;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    .bottom-bar { padding: 0.75rem 1rem; }
+    #mic-btn { width: 56px; height: 56px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SG</div>
+  <div>
+    <h1>Sankar Group Voice Bot</h1>
+    <span>Hindi + Telugu Support</span>
+  </div>
+  <span class="lang-badge">हिन्दी + తెలుగు</span>
+  <div class="status-dot" title="Online"></div>
+</header>
+
+<div id="chat-area">
+  <div class="welcome" id="welcome-msg">
+    <div class="big">🎙️</div>
+    <div>Mic button dabayein aur baat karein<br>
+    <span style="color:#888;font-size:0.8rem">మైక్ బటన్ నొక్కి మాట్లాడండి</span></div>
+  </div>
+</div>
+
+<div id="transcript-bar">Live transcript yahan dikhega...</div>
+
+<div class="lang-row">
+  <button class="lang-btn active" onclick="setLang('hi-IN')" id="btn-hi">हिन्दी</button>
+  <button class="lang-btn" onclick="setLang('te-IN')" id="btn-te">తెలుగు</button>
+  <button class="lang-btn" onclick="setLang('hi-IN')" id="btn-mix">Mix (Auto)</button>
+</div>
+
+<div class="bottom-bar">
+  <div class="side-btns">
+    <button class="icon-btn" onclick="clearChat()">🗑 Clear</button>
+    <button class="icon-btn" onclick="openLog()">📋 Logs</button>
+  </div>
+  <div class="mic-wrap">
+    <button id="mic-btn" onclick="toggleMic()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V20h3v2H8v-2h3v-2.07A8 8 0 0 1 4 10h2z"/>
+      </svg>
+    </button>
+    <div id="mic-label">Tap to speak</div>
+  </div>
+  <div class="side-btns">
+    <button class="icon-btn" onclick="document.getElementById('text-input').focus()">⌨ Type</button>
+    <button class="icon-btn" onclick="stopTTS()">🔇 Stop</button>
+  </div>
+</div>
+
+<div class="text-input-row" style="max-width:700px;margin:0 auto;padding:0 1rem 0.75rem;">
+  <input type="text" id="text-input" placeholder="Ya yahan type karein... (या यहाँ टाइप करें)" onkeydown="if(event.key==='Enter')sendText()">
+  <button id="send-btn" onclick="sendText()">Send</button>
+</div>
+
+<div id="log-modal" onclick="if(event.target===this)closeLog()">
+  <div class="modal-box">
+    <h3>📋 Conversation Logs</h3>
+    <pre id="log-content">Koi baat nahi hui abhi tak...</pre>
+    <div class="modal-actions">
+      <button onclick="downloadLog()">⬇ Download .txt</button>
+      <button onclick="downloadJSON()">⬇ Download .json</button>
+      <button onclick="closeLog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chat-area');
+const transcriptBar = document.getElementById('transcript-bar');
+const micBtn = document.getElementById('mic-btn');
+const micLabel = document.getElementById('mic-label');
+
+let isListening = false;
+let recognition = null;
+let currentLang = 'hi-IN';
+let conversationLogs = [];
+let isSpeaking = false;
+let userName = null;
+let utteranceQueue = [];
+
+
+const responses = {
+  greet: [
+    "Namaste! Aapko kaise help kar sakta hoon? 😊\nనమస్కారం! నేను మీకు ఎలా సహాయం చేయగలను?",
+    "Namaste ji, swaagat hai Sankar Group mein! Batayein kya chahiye?\nనమస్కారం జీ, సంకర్ గ్రూప్‌కి స్వాగతం!"
+  ],
+  name: (n) => `Bahut accha ${n} ji! Aapko kya help chahiye?\nచాలా బాగుంది ${n} గారు! మీకు ఏ సహాయం కావాలి?`,
+  demo: [
+    "Zaroor! Aapke liye ek software demo schedule karte hain. Aapka preferred time kya hai?\nతప్పకుండా! మీకు ఒక సాఫ్ట్‌వేర్ డెమో షెడ్యూల్ చేస్తాం. మీకు ఏ సమయం అనుకూలం?",
+    "Sure, meeku demo schedule chestanu. Kal subah 10 baje theek rahega?\nఖచ్చితంగా, మీకు డెమో షెడ్యూల్ చేస్తాం. రేపు ఉదయం 10 గంటలు సరిపోతుందా?"
+  ],
+  pricing: [
+    "Hamaare pricing plans bahut flexible hain. Kya aap ek demo call ke baad details discuss karna chahenge?\nమా ప్రైసింగ్ ప్లాన్లు చాలా సౌకర్యవంతంగా ఉన్నాయి. డెమో తర్వాత మాట్లాడదాం.",
+  ],
+  contact: [
+    "Aap humare team se +91 9853886666 pe contact kar sakte hain.\nమీరు మా టీమ్‌ను +91 9853886666 కి కాల్ చేయవచ్చు."
+  ],
+  thanks: [
+    "Shukriya! Humare saath contact karne ke liye dhanyavaad. Koi aur sawaal?\nధన్యవాదాలు! మాతో సంప్రదించినందుకు కృతజ్ఞతలు. మరో ప్రశ్న ఉందా?"
+  ],
+  time: [
+    "Aapko 9 AM se 6 PM ke beech contact kar sakte hain, Monday se Saturday.\nమీరు సోమవారం నుండి శనివారం, ఉదయం 9 నుండి సాయంత్రం 6 గంటల మధ్య సంప్రదించవచ్చు."
+  ],
+  bye: [
+    "Alvida! Sankar Group mein aapka swagat hai jab bhi zaroorat ho.\nవీడ్కోలు! ఎప్పుడైనా అవసరమైతే సంకర్ గ్రూప్‌లో స్వాగతం."
+  ],
+  default: [
+    "Samajh gaya. Kya aap thoda aur detail mein bata sakte hain?\nఅర్థమైంది. కొంచెం వివరంగా చెప్పగలరా?",
+    "Aapki baat sun raha hoon. Kya aapko kisi specific service ke baare mein jaanna hai?\nమీ మాట వింటున్నాను. ఏదైనా నిర్దిష్ట సేవ గురించి తెలుసుకోవాలా?"
+  ]
+};
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getBotReply(text) {
+  const t = text.toLowerCase();
+
+
+  const nameMatch = t.match(/(?:naa?|mera?|my|main|naam|peru|name is?)\s+([a-z\u0900-\u097f\u0c00-\u0c7f]+)/i);
+  if (nameMatch && nameMatch[1].length > 1) {
+    userName = nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1);
+    return responses.name(userName);
+  }
+
+  if (/namaste|hello|hi|helo|namaskar|నమస్కారం|నమస్తే|vanakam/.test(t)) return pick(responses.greet);
+  if (/demo|show|display|చూపించు|డెమో/.test(t)) return pick(responses.demo);
+  if (/price|pricing|cost|charge|rate|ధర|ఖర్చు/.test(t)) return pick(responses.pricing);
+  if (/contact|phone|number|call|కాల్|నంబర్/.test(t)) return pick(responses.contact);
+  if (/thank|thanks|shukriya|dhanyavad|ధన్యవాద/.test(t)) return pick(responses.thanks);
+  if (/time|hours|open|timing|samay|సమయం/.test(t)) return pick(responses.time);
+  if (/bye|goodbye|alvida|baad|later|వీడ్కోలు/.test(t)) return pick(responses.bye);
+  if (/help|chahiye|kavali|want|need|కావాలి|సహాయం/.test(t)) return `${userName ? userName + ' ji, ' : ''}Zaroor madad karoonga! Aapko demo chahiye, pricing info chahiye, ya kuch aur?\nతప్పకుండా సహాయం చేస్తాను! మీకు డెమో కావాలా, ధర సమాచారం కావాలా, లేదా మరేదైనా?`;
+
+  return pick(responses.default);
+}
+
+function removeWelcome() {
+  const w = document.getElementById('welcome-msg');
+  if (w) w.remove();
+}
+
+function addMessage(role, text) {
+  removeWelcome();
+  const wrap = document.createElement('div');
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = role === 'user' ? '🎤 Aap' : '🤖 Bot';
+  wrap.appendChild(label);
+
+  const bubble = document.createElement('div');
+  bubble.className = `msg ${role}`;
+  bubble.textContent = text;
+
+  if (role === 'bot') {
+    const playBtn = document.createElement('button');
+    playBtn.className = 'play-btn';
+    playBtn.textContent = '▶ Sunaao / వినండి';
+    const msgText = text;
+    playBtn.onclick = () => speakText(msgText);
+    bubble.appendChild(playBtn);
+  }
+
+  wrap.appendChild(bubble);
+  chatArea.appendChild(wrap);
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+
+  const ts = new Date().toLocaleTimeString('en-IN');
+  conversationLogs.push({ time: ts, role, text });
+}
+
+function showTyping() {
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.id = 'typing-indicator';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  chatArea.appendChild(t);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+
+function setupRecognition() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) return null;
+  const r = new SpeechRec();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = currentLang;
+  r.maxAlternatives = 1;
+
+  r.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    transcriptBar.textContent = final || interim || '...';
+    transcriptBar.className = 'active';
+    if (final) processUserInput(final.trim());
+  };
+
+
+  r.onend = () => stopListening();
+  r.onerror = (e) => {
+    console.warn('STT error:', e.error);
+    stopListening();
+    if (e.error === 'no-speech') transcriptBar.textContent = 'Kuch sunai nahi diya. Dobara try karein.';
+  };
+  return r;
+}
+
+function toggleMic() {
+  if (isListening) stopListening();
+  else startListening();
+}
+
+function startListening() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    alert('Aapka browser speech recognition support nahi karta. Niche text input use karein.\n\nYour browser does not support speech recognition. Please use the text input below.');
+    return;
+  }
+  recognition = setupRecognition();
+  try {
+    recognition.start();
+    isListening = true;
+    micBtn.classList.add('listening');
+    micLabel.textContent = 'Listening...';
+    transcriptBar.textContent = 'Bol rahe hain... / మాట్లాడుతున్నారు...';
+    transcriptBar.className = 'active';
+  } catch(e) { console.error(e); }
+}
+
+function stopListening() {
+  if (recognition) try { recognition.stop(); } catch(e) {}
+  isListening = false;
+  micBtn.classList.remove('listening');
+  micLabel.textContent = 'Tap to speak';
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  if (lang === 'hi-IN') document.getElementById('btn-hi').classList.add('active');
+  else if (lang === 'te-IN') document.getElementById('btn-te').classList.add('active');
+  else document.getElementById('btn-mix').classList.add('active');
+}
+
+
+function processUserInput(text) {
+  if (!text) return;
+  addMessage('user', text);
+  transcriptBar.textContent = text;
+  showTyping();
+
+  setTimeout(() => {
+    removeTyping();
+    const reply = getBotReply(text);
+    addMessage('bot', reply);
+    speakText(reply);
+  }, 700 + Math.random() * 500);
+}
+
+function sendText() {
+  const inp = document.getElementById('text-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  inp.value = '';
+  processUserInput(val);
+}
+
+
+function speakText(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  
+  const lines = text.split('\n');
+  const toSpeak = lines[0] || text;
+
+  const utt = new SpeechSynthesisUtterance(toSpeak);
+  utt.lang = currentLang === 'te-IN' ? 'te-IN' : 'hi-IN';
+  utt.rate = 0.95;
+  utt.pitch = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => v.lang === utt.lang)
+    || voices.find(v => v.lang.startsWith('hi'))
+    || voices.find(v => v.lang.startsWith('te'))
+    || voices.find(v => v.lang.includes('IN'));
+  if (preferred) utt.voice = preferred;
+  window.speechSynthesis.speak(utt);
+}
+
+function stopTTS() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+
+window.speechSynthesis && window.speechSynthesis.getVoices();
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+// ---- Logs ----
+function openLog() {
+  const el = document.getElementById('log-content');
+  if (conversationLogs.length === 0) {
+    el.textContent = 'Koi baat nahi hui abhi tak...';
+  } else {
+    el.textContent = conversationLogs.map(l =>
+      `[${l.time}] ${l.role === 'user' ? 'User' : 'Bot'}: ${l.text}`
+    ).join('\n\n');
+  }
+  document.getElementById('log-modal').classList.add('open');
+}
+
+function closeLog() {
+  document.getElementById('log-modal').classList.remove('open');
+}
+
+function downloadLog() {
+  const content = conversationLogs.map(l =>
+    `[${l.time}] ${l.role === 'user' ? 'User' : 'Bot'}: ${l.text}`
+  ).join('\n\n');
+  download('conversation_log.txt', content, 'text/plain');
+}
+
+function downloadJSON() {
+  download('conversation_log.json', JSON.stringify(conversationLogs, null, 2), 'application/json');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function clearChat() {
+  chatArea.innerHTML = '';
+  conversationLogs = [];
+  userName = null;
+  const w = document.createElement('div');
+  w.className = 'welcome';
+  w.id = 'welcome-msg';
+  w.innerHTML = '<div class="big">🎙️</div><div>Mic button dabayein aur baat karein<br><span style="color:#888;font-size:0.8rem">మైక్ బటన్ నొక్కి మాట్లాడండి</span></div>';
+  chatArea.appendChild(w);
+  transcriptBar.textContent = 'Live transcript yahan dikhega...';
+  transcriptBar.className = '';
+}
+
+setTimeout(() => {
+  addMessage('bot', 'Namaste! Main Sankar Group ka virtual assistant hoon. Aapko kaise help kar sakta hoon?\nనమస్కారం! నేను సంకర్ గ్రూప్ వర్చువల్ అసిస్టెంట్‌ని. నేను మీకు ఎలా సహాయం చేయగలను?');
+  speakText('Namaste! Main Sankar Group ka virtual assistant hoon. Aapko kaise help kar sakta hoon?');
+}, 800);
+</script>
+</body>
+</html>
