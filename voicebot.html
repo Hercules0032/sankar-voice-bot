@@ -574,6 +574,7 @@ function setupRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRec) return null;
   
+  //fixed the error 
   const r = new SpeechRec();
   r.continuous = true;
   r.interimResults = true;
